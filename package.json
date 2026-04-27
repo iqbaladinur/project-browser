@@ -1,0 +1,120 @@
+{
+  "name": "project-browser",
+  "displayName": "Project Browser",
+  "description": "Browse and search projects inside configured base folders",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "project-browser",
+          "title": "Project Browser",
+          "icon": "./images/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "project-browser": [
+        {
+          "id": "projectBrowser.projects",
+          "name": "Projects"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "projectBrowser.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "projectBrowser.search",
+        "title": "Search Projects",
+        "icon": "$(search)"
+      },
+      {
+        "command": "projectBrowser.openProject",
+        "title": "Open Project"
+      },
+      {
+        "command": "projectBrowser.openProjectNewWindow",
+        "title": "Open in New Window",
+        "icon": "$(empty-window)"
+      },
+      {
+        "command": "projectBrowser.addBaseFolder",
+        "title": "Project Browser: Add Base Folder"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "projectBrowser.search",
+          "when": "view == projectBrowser.projects",
+          "group": "navigation@1"
+        },
+        {
+          "command": "projectBrowser.refresh",
+          "when": "view == projectBrowser.projects",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "projectBrowser.openProjectNewWindow",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "inline"
+        },
+        {
+          "command": "projectBrowser.openProject",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "1_open@1"
+        },
+        {
+          "command": "projectBrowser.openProjectNewWindow",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "1_open@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Project Browser",
+      "properties": {
+        "projectBrowser.baseFolders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "List of base folders to scan for projects. Supports ~ for home directory."
+        },
+        "projectBrowser.showNonGitFolders": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show folders that are not git repositories"
+        },
+        "projectBrowser.gitReposFirst": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sort git repositories to the top of the list"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "npx @vscode/vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}
