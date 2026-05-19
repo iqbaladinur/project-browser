@@ -63,6 +63,21 @@
         "icon": "$(copy)"
       },
       {
+        "command": "projectBrowser.revealInExplorer",
+        "title": "Reveal in File Explorer",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "projectBrowser.renameProject",
+        "title": "Rename Display Name",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "projectBrowser.resetProjectName",
+        "title": "Reset Display Name",
+        "icon": "$(discard)"
+      },
+      {
         "command": "projectBrowser.addBaseFolder",
         "title": "Project Browser: Add Base Folder"
       }
@@ -107,6 +122,11 @@
           "group": "1_open@3"
         },
         {
+          "command": "projectBrowser.revealInExplorer",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "1_open@4"
+        },
+        {
           "command": "projectBrowser.copyRelativePath",
           "when": "view == projectBrowser.projects && viewItem == project",
           "group": "2_copy@1"
@@ -115,6 +135,16 @@
           "command": "projectBrowser.copyPath",
           "when": "view == projectBrowser.projects && viewItem == project",
           "group": "2_copy@2"
+        },
+        {
+          "command": "projectBrowser.renameProject",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "3_manage@1"
+        },
+        {
+          "command": "projectBrowser.resetProjectName",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "3_manage@2"
         }
       ]
     },

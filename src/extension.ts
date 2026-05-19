@@ -1,9 +1,25 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { ProjectItem, ProjectProvider, getAllProjects } from './ProjectProvider';
+import {
+  ProjectItem,
+  ProjectNameOverrides,
+  ProjectProvider,
+  getAllProjects,
+} from './ProjectProvider';
+
+const projectNamesKey = 'projectBrowser.projectNames';
+const collapsedBaseFoldersKey = 'projectBrowser.collapsedBaseFolders';
 
 export function activate(context: vscode.ExtensionContext) {
-  const provider = new ProjectProvider();
+  const getProjectNames = () => context.globalState.get<ProjectNameOverrides>(projectNamesKey, {});
+  const updateProjectNames = (projectNames: ProjectNameOverrides) =>
+    context.globalState.update(projectNamesKey, projectNames);
+  const getCollapsedBaseFolders = () =>
+    context.globalState.get<string[]>(collapsedBaseFoldersKey, []);
+  const updateCollapsedBaseFolders = (collapsedBaseFolders: string[]) =>
+    context.globalState.update(collapsedBaseFoldersKey, collapsedBaseFolders);
+
+  const provider = new ProjectProvider(getProjectNames, getCollapsedBaseFolders);
   const projectFolderIcon = vscode.Uri.joinPath(context.extensionUri, 'images', 'project-folder.svg');
   const projectGitIcon = vscode.Uri.joinPath(context.extensionUri, 'images', 'project-git.svg');
 
@@ -15,6 +31,30 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(treeView);
 
   context.subscriptions.push(
+    treeView.onDidCollapseElement(async ({ element }) => {
+      if (!element.isBaseFolder) {
+        return;
+      }
+
+      const collapsedBaseFolders = new Set(getCollapsedBaseFolders());
+      collapsedBaseFolders.add(element.entry.fullPath);
+      await updateCollapsedBaseFolders([...collapsedBaseFolders]);
+    })
+  );
+
+  context.subscriptions.push(
+    treeView.onDidExpandElement(async ({ element }) => {
+      if (!element.isBaseFolder) {
+        return;
+      }
+
+      const collapsedBaseFolders = new Set(getCollapsedBaseFolders());
+      collapsedBaseFolders.delete(element.entry.fullPath);
+      await updateCollapsedBaseFolders([...collapsedBaseFolders]);
+    })
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand('projectBrowser.refresh', () => {
       provider.refresh();
     })
@@ -22,7 +62,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('projectBrowser.search', async () => {
-      const projects = getAllProjects();
+      const projects = getAllProjects(getProjectNames());
 
       if (projects.length === 0) {
         vscode.window.showInformationMessage(
@@ -32,10 +72,12 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       const items = projects.map((p) => ({
-        label: p.name,
+        label: p.displayName,
         iconPath: p.isGit ? projectGitIcon : projectFolderIcon,
         description: p.fullPath,
-        detail: p.isGit ? 'git repository' : undefined,
+        detail: p.displayName === p.name
+          ? (p.isGit ? 'git repository' : undefined)
+          : `Folder: ${p.name}${p.isGit ? ' · git repository' : ''}`,
         projectPath: p.fullPath,
       }));
 
@@ -102,10 +144,52 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('projectBrowser.openInNewTerminal', (item: ProjectItem) => {
       const terminal = vscode.window.createTerminal({
-        name: item.entry.name,
+        name: item.entry.displayName,
         cwd: item.entry.fullPath,
       });
       terminal.show();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('projectBrowser.revealInExplorer', (item: ProjectItem) => {
+      vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(item.entry.fullPath));
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('projectBrowser.renameProject', async (item: ProjectItem) => {
+      const displayName = await vscode.window.showInputBox({
+        title: 'Rename Project Display Name',
+        prompt: 'This changes the Project Browser label only. The folder name stays unchanged.',
+        value: item.entry.displayName,
+        valueSelection: [0, item.entry.displayName.length],
+        validateInput: (value) => value.trim().length === 0 ? 'Name cannot be empty.' : undefined,
+      });
+
+      if (displayName === undefined) {
+        return;
+      }
+
+      const trimmed = displayName.trim();
+      const projectNames = { ...getProjectNames() };
+      if (trimmed === item.entry.name) {
+        delete projectNames[item.entry.fullPath];
+      } else {
+        projectNames[item.entry.fullPath] = trimmed;
+      }
+
+      await updateProjectNames(projectNames);
+      provider.refresh();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('projectBrowser.resetProjectName', async (item: ProjectItem) => {
+      const projectNames = { ...getProjectNames() };
+      delete projectNames[item.entry.fullPath];
+      await updateProjectNames(projectNames);
+      provider.refresh();
     })
   );
 
