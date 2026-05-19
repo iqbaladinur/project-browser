@@ -48,6 +48,21 @@
         "icon": "$(empty-window)"
       },
       {
+        "command": "projectBrowser.openInNewTerminal",
+        "title": "Open in New Terminal",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "projectBrowser.copyRelativePath",
+        "title": "Copy Relative Path",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "projectBrowser.copyPath",
+        "title": "Copy Path",
+        "icon": "$(copy)"
+      },
+      {
         "command": "projectBrowser.addBaseFolder",
         "title": "Project Browser: Add Base Folder"
       }
@@ -72,6 +87,11 @@
           "group": "inline"
         },
         {
+          "command": "projectBrowser.openInNewTerminal",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "inline"
+        },
+        {
           "command": "projectBrowser.openProject",
           "when": "view == projectBrowser.projects && viewItem == project",
           "group": "1_open@1"
@@ -80,6 +100,21 @@
           "command": "projectBrowser.openProjectNewWindow",
           "when": "view == projectBrowser.projects && viewItem == project",
           "group": "1_open@2"
+        },
+        {
+          "command": "projectBrowser.openInNewTerminal",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "1_open@3"
+        },
+        {
+          "command": "projectBrowser.copyRelativePath",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "2_copy@1"
+        },
+        {
+          "command": "projectBrowser.copyPath",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "2_copy@2"
         }
       ]
     },

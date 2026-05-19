@@ -1,8 +1,11 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { ProjectItem, ProjectProvider, getAllProjects } from './ProjectProvider';
 
 export function activate(context: vscode.ExtensionContext) {
   const provider = new ProjectProvider();
+  const projectFolderIcon = vscode.Uri.joinPath(context.extensionUri, 'images', 'project-folder.svg');
+  const projectGitIcon = vscode.Uri.joinPath(context.extensionUri, 'images', 'project-git.svg');
 
   const treeView = vscode.window.createTreeView('projectBrowser.projects', {
     treeDataProvider: provider,
@@ -29,7 +32,8 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       const items = projects.map((p) => ({
-        label: (p.isGit ? '$(source-control) ' : '$(folder) ') + p.name,
+        label: p.name,
+        iconPath: p.isGit ? projectGitIcon : projectFolderIcon,
         description: p.fullPath,
         detail: p.isGit ? 'git repository' : undefined,
         projectPath: p.fullPath,
@@ -77,6 +81,31 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.Uri.file(item.entry.fullPath),
         true
       );
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('projectBrowser.copyRelativePath', async (item: ProjectItem) => {
+      const relativePath = path.relative(item.entry.baseFolder, item.entry.fullPath) || item.entry.name;
+      await vscode.env.clipboard.writeText(relativePath);
+      vscode.window.showInformationMessage(`Copied relative path: ${relativePath}`);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('projectBrowser.copyPath', async (item: ProjectItem) => {
+      await vscode.env.clipboard.writeText(item.entry.fullPath);
+      vscode.window.showInformationMessage(`Copied path: ${item.entry.fullPath}`);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('projectBrowser.openInNewTerminal', (item: ProjectItem) => {
+      const terminal = vscode.window.createTerminal({
+        name: item.entry.name,
+        cwd: item.entry.fullPath,
+      });
+      terminal.show();
     })
   );
 

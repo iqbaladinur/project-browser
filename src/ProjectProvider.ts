@@ -3,6 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
+const projectFolderIcon = vscode.Uri.file(path.join(__dirname, '..', 'images', 'project-folder.svg'));
+const projectGitIcon = vscode.Uri.file(path.join(__dirname, '..', 'images', 'project-git.svg'));
+
 export interface ProjectEntry {
   name: string;
   fullPath: string;
@@ -30,9 +33,7 @@ export class ProjectItem extends vscode.TreeItem {
       this.contextValue = 'project';
       this.tooltip = entry.fullPath;
       this.description = entry.isGit ? 'git' : undefined;
-      this.iconPath = entry.isGit
-        ? new vscode.ThemeIcon('source-control', new vscode.ThemeColor('charts.green'))
-        : new vscode.ThemeIcon('folder');
+      this.iconPath = entry.isGit ? projectGitIcon : projectFolderIcon;
       this.command = {
         command: 'projectBrowser.openProject',
         title: 'Open Project',
