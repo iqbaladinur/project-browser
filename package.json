@@ -78,6 +78,21 @@
         "icon": "$(discard)"
       },
       {
+        "command": "projectBrowser.customizeProjectIcon",
+        "title": "Customize Icon",
+        "icon": "$(symbol-color)"
+      },
+      {
+        "command": "projectBrowser.customizeProjectColor",
+        "title": "Customize Color",
+        "icon": "$(paintcan)"
+      },
+      {
+        "command": "projectBrowser.resetProjectCustomization",
+        "title": "Reset Icon and Color",
+        "icon": "$(discard)"
+      },
+      {
         "command": "projectBrowser.addBaseFolder",
         "title": "Project Browser: Add Base Folder"
       }
@@ -145,6 +160,21 @@
           "command": "projectBrowser.resetProjectName",
           "when": "view == projectBrowser.projects && viewItem == project",
           "group": "3_manage@2"
+        },
+        {
+          "command": "projectBrowser.customizeProjectIcon",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "4_style@1"
+        },
+        {
+          "command": "projectBrowser.customizeProjectColor",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "4_style@2"
+        },
+        {
+          "command": "projectBrowser.resetProjectCustomization",
+          "when": "view == projectBrowser.projects && viewItem == project",
+          "group": "4_style@3"
         }
       ]
     },

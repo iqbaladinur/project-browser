@@ -2,13 +2,40 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import {
   ProjectItem,
+  ProjectCustomizations,
+  ProjectIconId,
   ProjectNameOverrides,
   ProjectProvider,
   getAllProjects,
+  getProjectIconPath,
 } from './ProjectProvider';
 
 const projectNamesKey = 'projectBrowser.projectNames';
 const collapsedBaseFoldersKey = 'projectBrowser.collapsedBaseFolders';
+const projectCustomizationsKey = 'projectBrowser.projectCustomizations';
+
+const iconOptions: Array<{ label: string; icon: ProjectIconId }> = [
+  { label: 'Folder', icon: 'folder' },
+  { label: 'Git Repo', icon: 'repo' },
+  { label: 'Star', icon: 'star' },
+  { label: 'Rocket', icon: 'rocket' },
+  { label: 'Database', icon: 'database' },
+  { label: 'Package', icon: 'package' },
+  { label: 'Tools', icon: 'tools' },
+  { label: 'Mobile', icon: 'mobile' },
+];
+
+const colorOptions = [
+  { label: 'Default', color: undefined },
+  { label: 'Green', color: '#6a9955' },
+  { label: 'Blue', color: '#4fc1ff' },
+  { label: 'Yellow', color: '#dcdcaa' },
+  { label: 'Orange', color: '#ce9178' },
+  { label: 'Red', color: '#f14c4c' },
+  { label: 'Purple', color: '#c586c0' },
+  { label: 'Cyan', color: '#4ec9b0' },
+  { label: 'Gray', color: '#c5c5c5' },
+];
 
 export function activate(context: vscode.ExtensionContext) {
   const getProjectNames = () => context.globalState.get<ProjectNameOverrides>(projectNamesKey, {});
@@ -18,10 +45,17 @@ export function activate(context: vscode.ExtensionContext) {
     context.globalState.get<string[]>(collapsedBaseFoldersKey, []);
   const updateCollapsedBaseFolders = (collapsedBaseFolders: string[]) =>
     context.globalState.update(collapsedBaseFoldersKey, collapsedBaseFolders);
+  const getProjectCustomizations = () =>
+    context.globalState.get<ProjectCustomizations>(projectCustomizationsKey, {});
+  const updateProjectCustomizations = (projectCustomizations: ProjectCustomizations) =>
+    context.globalState.update(projectCustomizationsKey, projectCustomizations);
 
-  const provider = new ProjectProvider(getProjectNames, getCollapsedBaseFolders);
-  const projectFolderIcon = vscode.Uri.joinPath(context.extensionUri, 'images', 'project-folder.svg');
-  const projectGitIcon = vscode.Uri.joinPath(context.extensionUri, 'images', 'project-git.svg');
+  const provider = new ProjectProvider(
+    getProjectNames,
+    getCollapsedBaseFolders,
+    getProjectCustomizations,
+    context.globalStorageUri.fsPath
+  );
 
   const treeView = vscode.window.createTreeView('projectBrowser.projects', {
     treeDataProvider: provider,
@@ -73,7 +107,11 @@ export function activate(context: vscode.ExtensionContext) {
 
       const items = projects.map((p) => ({
         label: p.displayName,
-        iconPath: p.isGit ? projectGitIcon : projectFolderIcon,
+        iconPath: getProjectIconPath(
+          p,
+          getProjectCustomizations()[p.fullPath],
+          context.globalStorageUri.fsPath
+        ),
         description: p.fullPath,
         detail: p.displayName === p.name
           ? (p.isGit ? 'git repository' : undefined)
@@ -189,6 +227,73 @@ export function activate(context: vscode.ExtensionContext) {
       const projectNames = { ...getProjectNames() };
       delete projectNames[item.entry.fullPath];
       await updateProjectNames(projectNames);
+      provider.refresh();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('projectBrowser.customizeProjectIcon', async (item: ProjectItem) => {
+      const selected = await vscode.window.showQuickPick(
+        iconOptions.map((option) => ({
+          label: option.label,
+          icon: option.icon,
+          picked: getProjectCustomizations()[item.entry.fullPath]?.icon === option.icon,
+        })),
+        { placeHolder: 'Select project icon' }
+      );
+
+      if (!selected) {
+        return;
+      }
+
+      const projectCustomizations = { ...getProjectCustomizations() };
+      const customization = { ...projectCustomizations[item.entry.fullPath], icon: selected.icon };
+      projectCustomizations[item.entry.fullPath] = customization;
+      await updateProjectCustomizations(projectCustomizations);
+      provider.refresh();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('projectBrowser.customizeProjectColor', async (item: ProjectItem) => {
+      const selected = await vscode.window.showQuickPick(
+        colorOptions.map((option) => ({
+          label: option.label,
+          description: option.color,
+          color: option.color,
+          picked: getProjectCustomizations()[item.entry.fullPath]?.color === option.color,
+        })),
+        { placeHolder: 'Select project marker color' }
+      );
+
+      if (!selected) {
+        return;
+      }
+
+      const projectCustomizations = { ...getProjectCustomizations() };
+      const customization = { ...projectCustomizations[item.entry.fullPath] };
+      if (selected.color) {
+        customization.color = selected.color;
+      } else {
+        delete customization.color;
+      }
+
+      if (customization.icon || customization.color) {
+        projectCustomizations[item.entry.fullPath] = customization;
+      } else {
+        delete projectCustomizations[item.entry.fullPath];
+      }
+
+      await updateProjectCustomizations(projectCustomizations);
+      provider.refresh();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('projectBrowser.resetProjectCustomization', async (item: ProjectItem) => {
+      const projectCustomizations = { ...getProjectCustomizations() };
+      delete projectCustomizations[item.entry.fullPath];
+      await updateProjectCustomizations(projectCustomizations);
       provider.refresh();
     })
   );
